@@ -36,13 +36,18 @@ public final class OrdersBackEndStore implements MessageListener, ServiceLifeCyc
 	private final ICreditCheck creditCheck;
 	
 	public OrdersBackEndStore(final Properties p) throws JMSException, ClassNotFoundException, SQLException {
+		//注文約定データの消費[<= executedOrdersTopic]
 		ordersConsumer = new TradingMachineMessageConsumer(p.getProperty("activeMQ.url"), p.getProperty("activeMQ.executedOrdersTopic"), DestinationType.Topic, this, "BackEnd", null, null);
-		mongoDBManager = new MongoDBManager(new MongoDBConnection(new DatabaseProperties(p.getProperty("mongoDB.host"), 
-				Integer.valueOf(p.getProperty("mongoDB.port")), p.getProperty("mongoDB.database"))), p.getProperty("mongoDB.executedOrdersCollection"));
+		
+		mongoDBManager = new MongoDBManager(new MongoDBConnection(new DatabaseProperties(
+				p.getProperty("mongoDB.host"), Integer.valueOf(p.getProperty("mongoDB.port")), 
+				p.getProperty("mongoDB.database"), p.getProperty("mongoDB.username"), p.getProperty("mongoDB.password"))), p.getProperty("mongoDB.executedOrdersCollection"));
+		
 		final MySqlConnection mySqlConnection = new MySqlConnection(new DatabaseProperties(p.getProperty("mySQL.host"), 
 				Integer.valueOf(p.getProperty("mySQL.port")), p.getProperty("mySQL.database"), 
 				p.getProperty("mySQL.userName"), p.getProperty("mySQL.password")));
 		mySqlManager = new MySqlManager(mySqlConnection);
+		
 		creditCheck = new CreditCheck(mySqlConnection.getConnection());
 	}
 	
@@ -61,9 +66,11 @@ public final class OrdersBackEndStore implements MessageListener, ServiceLifeCyc
 	@Override
 	public void onMessage(final Message message) {
 		try {
+			// receive from executedOrdersTopic
 			final SimpleOrder order = (SimpleOrder)((ObjectMessage)message).getObject();
 			if (order.isCreditCheckFailed()) //resets the credit.
 				creditCheck.setCredit(Utility.roundDouble(randomGenerator.nextDouble() * 99999, 2));
+			
 			mongoDBManager.storeOrder(order);
 			mySqlManager.storeOrder(order);
 			

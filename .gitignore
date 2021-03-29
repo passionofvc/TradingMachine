@@ -1,6 +1,7 @@
 RemoteSystemsTempFiles/
 .recommenders/
 .metadata/
+.DS_Store
 TradingMachineBinaries
 TradingMachineServer/log/
 TradingMachineServer/target/
@@ -12,4 +13,6 @@ TradingMachineUtility/log/
 TradingMachineUtility/target/
 TradingMachineMonitorUI/log/
 TradingMachineMonitorUI/target/
+TradingMachineRoot/log/
+TradingMachineRoot/target/
 

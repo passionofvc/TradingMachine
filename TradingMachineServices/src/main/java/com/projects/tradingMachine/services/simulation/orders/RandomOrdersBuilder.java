@@ -22,6 +22,7 @@ public final class RandomOrdersBuilder {
 		final SimpleOrder order = new SimpleOrder();	
 		order.setSide(randomEnumValue(OrderSide.class));
 		final OrderType randomOrderType = randomEnumValue(OrderType.class);
+		
 		switch(randomOrderType) {
 			case LIMIT: order.setLimit(Utility.roundDouble(randomGenerator.nextDouble() * 100, 2)); break;
 			case STOP: order.setStop(Utility.roundDouble(randomGenerator.nextDouble() * 100, 2)); break;

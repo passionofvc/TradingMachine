@@ -36,11 +36,15 @@ public final class MarketDataProducer implements Runnable {
 	
 	public MarketDataProducer(final Properties properties) throws JMSException {
 		this.properties = properties;
+		//marketDataTopic 価格データの生成[=>marketDataTopic]
 		marketDataProducer = new TradingMachineMessageProducer(properties.getProperty("activeMQ.url"), properties.getProperty("activeMQ.marketDataTopic"), DestinationType.Topic, "MarketDataProducer", null);
 		marketDataProducer.start();
+		
 		mongoDBManager = new MongoDBManager(new MongoDBConnection(new DatabaseProperties(properties.getProperty("mongoDB.host"), 
-				Integer.valueOf(properties.getProperty("mongoDB.port")), properties.getProperty("mongoDB.database"))), 
+				Integer.valueOf(properties.getProperty("mongoDB.port")), properties.getProperty("mongoDB.database"), 
+				properties.getProperty("mongoDB.username"), properties.getProperty("mongoDB.password"))), 
 				properties.getProperty("mongoDB.executedOrdersCollection"), properties.getProperty("mongoDB.marketDataCollection"));
+		
 		executorService = Executors.newSingleThreadExecutor();
 	}
 	
@@ -51,8 +55,11 @@ public final class MarketDataProducer implements Runnable {
 			final ArrayList<MarketData> marketDataItems = new ArrayList<MarketData>(allowedSymbols.size());
 			allowedSymbols.forEach(symbol ->  marketDataItems.add(Utility.buildRandomMarketDataItem(symbol)));
 			try {
+				//market Dataを生成し、Topicにpublish
 				marketDataProducer.getProducer().
 				send(marketDataProducer.getSession().createObjectMessage(marketDataItems));
+				
+				//market DataをMongo DBに保存する
 				executorService.execute(() -> mongoDBManager.storeMarketDataItems(marketDataItems, false));
 				TimeUnit.SECONDS.sleep(Integer.valueOf(properties.getProperty("marketDataPublishingPeriod")));
 			}

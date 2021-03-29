@@ -50,17 +50,23 @@ public class TradingMachineFixAcceptorApplication extends quickfix.MessageCracke
     public TradingMachineFixAcceptorApplication(final SessionSettings settings) throws Exception {
     	this.settings = settings;
     	final Properties applicationProperties = Utility.getApplicationProperties("tradingMachine.properties");
+    	//market feed data
 		marketDataManager = new MarketDataManager(applicationProperties);
 		marketDataManager.start();
+		
+		//onMessage's executor
         executor = Executors.newFixedThreadPool(Integer.valueOf(applicationProperties.getProperty("numberProcessingOrderThreads")));
+        
         creditCheckConnectionPool = PooledDataSourceBuilder.getDataSource(new DatabaseProperties(applicationProperties.getProperty("mySQL.host"), 
         		Integer.valueOf(applicationProperties.getProperty("mySQL.port")), applicationProperties.getProperty("mySQL.database"), 
         		applicationProperties.getProperty("mySQL.userName"), applicationProperties.getProperty("mySQL.password")), 
         		Integer.valueOf(applicationProperties.getProperty("creditCheckDatabasePoolConnections")));
+        
+        //DB connection check
         scheduledExecutorService = Executors.newScheduledThreadPool(1);
         scheduledExecutorService.scheduleWithFixedDelay(() -> {
 			logger.debug("Credit check database pool,  idle: "+creditCheckConnectionPool.getNumIdle()+", active: "+creditCheckConnectionPool.getNumActive());
-        }, 1, 10, TimeUnit.SECONDS); 
+        }, 1, 60, TimeUnit.SECONDS); 
     }
 
     @Override
@@ -112,14 +118,17 @@ public class TradingMachineFixAcceptorApplication extends quickfix.MessageCracke
     		}
     	}
     }
-    
+    @Override
     public void fromApp(quickfix.Message message, SessionID sessionID) throws FieldNotFound, IncorrectDataFormat,
             IncorrectTagValue, UnsupportedMessageType {
+    	logger.info("[fromApp]"+message.toString());
         crack(message, sessionID);
     }
-    
+    //@Override
+    //message from initiator[FIX client]
     public void onMessage(final quickfix.fix50.NewOrderSingle order, final SessionID sessionID)
             throws FieldNotFound, UnsupportedMessageType, IncorrectTagValue, NumberFormatException, ClassNotFoundException, SQLException, ConfigError, FieldConvertError {
+    	logger.info("[onMessage]"+order.toString());
     	executor.execute(new MatchingEngine(creditCheckConnectionPool, marketDataManager, order, sessionID));
     } 
     

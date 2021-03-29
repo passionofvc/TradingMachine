@@ -38,6 +38,7 @@ import quickfix.field.Account;
 import quickfix.field.AvgPx;
 import quickfix.field.ClOrdID;
 import quickfix.field.CumQty;
+import quickfix.field.ExecType;
 import quickfix.field.HandlInst;
 import quickfix.field.LeavesQty;
 import quickfix.field.MsgType;
@@ -67,8 +68,11 @@ public class TradingMachineFixInitiatorApplication implements Application, Messa
 		final Properties p = Utility.getApplicationProperties("tradingMachineOrderRouter.properties");
 		orderManager = new OrderManager();
 		loggedOnSessions = new HashSet<SessionID>();
+		//ordersQueue 注文データの消費[<= ordersQueue]
 		ordersConsumer = new TradingMachineMessageConsumer(p.getProperty("activeMQ.url"), p.getProperty("activeMQ.ordersQueue"), DestinationType.Queue, this, "FixInitiatorApplication", null, this);
 		ordersConsumer.start();
+		
+		//executedOrdersTopic //注文約定データの生成[=> executedOrdersTopic]
 		executedOrdersProducer = new TradingMachineMessageProducer(p.getProperty("activeMQ.url"), p.getProperty("activeMQ.executedOrdersTopic"), DestinationType.Topic, "FixInitiatorApplication", null);
 		executedOrdersProducer.start();
 	}
@@ -120,7 +124,10 @@ public class TradingMachineFixInitiatorApplication implements Application, Messa
 	public void fromApp(final Message message, final SessionID sessionId)
 			throws FieldNotFound, IncorrectDataFormat, IncorrectTagValue, UnsupportedMessageType {
 		try {
+			
             final MsgType msgType = new MsgType();
+            logger.info("["+message.getString(ExecType.FIELD)+"]");
+            logger.info("["+message.getHeader().getField(msgType).getField()+"]"+"["+message.getHeader().getField(msgType).getValue()+"]"+message.toString());
             if (message.getHeader().getField(msgType).valueEquals("8")) {
                 executionReport(message, sessionId);
             }
@@ -166,7 +173,7 @@ public class TradingMachineFixInitiatorApplication implements Application, Messa
         try {
             order.setMessage(message.getField(new Text()).getValue());
         } 
-        catch (final FieldNotFound e) {}
+        catch (final FieldNotFound e) {e.printStackTrace();}
         BigDecimal fillSize;
         final LeavesQty leavesQty = new LeavesQty();
         message.getField(leavesQty);

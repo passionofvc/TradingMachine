@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import com.projects.tradingMachine.utility.TradingMachineMessageProducer;
 import com.projects.tradingMachine.utility.Utility;
 import com.projects.tradingMachine.utility.Utility.DestinationType;
+import com.projects.tradingMachine.utility.order.SimpleOrder;
 
 public final class OrdersProducer implements Runnable {
 	private static final Logger logger = LoggerFactory.getLogger(OrdersProducer.class);
@@ -26,6 +27,7 @@ public final class OrdersProducer implements Runnable {
 	
 	public OrdersProducer(final Properties properties) throws JMSException {
 		this.properties = properties;
+		//ordersQueue 注文データの生成[=>ordersQueue]
 		ordersProducer = new TradingMachineMessageProducer(properties.getProperty("activeMQ.url"), properties.getProperty("activeMQ.ordersQueue"), DestinationType.Queue, "OrdersProducer", null);
 		ordersProducer.start();
 	}
@@ -35,7 +37,8 @@ public final class OrdersProducer implements Runnable {
 		final List<String> allowedSymbols = Arrays.stream(properties.getProperty("allowedSymbols").split(",")).collect(Collectors.toList());
 		while (!Thread.currentThread().isInterrupted()) {
         	try {
-        		ordersProducer.getProducer().send(ordersProducer.getSession().createObjectMessage(RandomOrdersBuilder.build(allowedSymbols)));
+        		SimpleOrder simpleOrder = RandomOrdersBuilder.build(allowedSymbols);
+        		ordersProducer.getProducer().send(ordersProducer.getSession().createObjectMessage(simpleOrder));
 				TimeUnit.SECONDS.sleep(Integer.valueOf(properties.getProperty("ordersPublishingPeriod")));
 			} 
         	catch(final InterruptedException ex) {

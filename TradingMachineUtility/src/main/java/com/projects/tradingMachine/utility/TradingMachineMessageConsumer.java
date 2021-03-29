@@ -19,6 +19,7 @@ public final class TradingMachineMessageConsumer implements ServiceLifeCycle {
 	
 	public TradingMachineMessageConsumer(final String brokerUrl, final String destinationName, final DestinationType destinationType, 
 			final MessageListener messageListener, final String clientIDSuffix, final String messageSelector, final ExceptionListener exceptionListener) throws JMSException {
+
 		final ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory(brokerUrl);
         connection = connectionFactory.createConnection();
         connection.setClientID(destinationName + "Consumer_" + clientIDSuffix);

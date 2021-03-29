@@ -62,7 +62,7 @@ public final class MongoDBManager implements DataManager {
 		} finally {
 		    cursor.close();
 		}
-		logger.info("Time taken to retrieve orders: "+(startTime - System.currentTimeMillis())+" ms.");
+		logger.info("Time taken to retrieve orders: "+(System.currentTimeMillis() - startTime)+" ms.");
 		return result;
 	}
 	
@@ -91,7 +91,7 @@ public final class MongoDBManager implements DataManager {
 		} finally {
 		    cursor.close();
 		}
-		logger.info("Time taken to retrieve orders: "+(startTime - System.currentTimeMillis())+" ms.");
+		logger.info("Time taken to retrieve orders: "+(System.currentTimeMillis() - startTime)+" ms.");
 		return result;
 	}
 

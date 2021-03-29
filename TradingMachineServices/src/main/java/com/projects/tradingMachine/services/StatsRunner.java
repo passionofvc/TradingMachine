@@ -40,13 +40,15 @@ public final class StatsRunner implements Runnable {
 	public StatsRunner(final Properties properties) {
 		this.properties = properties;
 		mongoDBManager = new MongoDBManager(new MongoDBConnection(new DatabaseProperties(properties.getProperty("mongoDB.host"), 
-				Integer.valueOf(properties.getProperty("mongoDB.port")), properties.getProperty("mongoDB.database"))), properties.getProperty("mongoDB.executedOrdersCollection"));
+				Integer.valueOf(properties.getProperty("mongoDB.port")), properties.getProperty("mongoDB.database"), 
+				properties.getProperty("mongoDB.username"),properties.getProperty("mongoDB.password"))), properties.getProperty("mongoDB.executedOrdersCollection"));
 	}
 	
 	@Override
 	public void run() {
 		while (!Thread.currentThread().isInterrupted()) {
 			try {
+				//Mongo DBの注文データを監視する
 				final List<SimpleOrder> orders = mongoDBManager.getOrders(Optional.ofNullable(null));
 				logger.info(groupOrdersByType(orders)+groupOrdersBySide(orders, 5)+groupOrdersBySideTypeTimeInForce(orders)+groupOrdersWithAndWithoutMarketData(orders));
 				//testReduction(orders);
@@ -122,7 +124,7 @@ public final class StatsRunner implements Runnable {
 	 * Does a three-levels grouping based on side, type and time in force.
 	 * */
 	private String groupOrdersBySideTypeTimeInForce(final List<SimpleOrder> orders) {
-		final StringBuilder sb = new StringBuilder("Orders split based on side, type and time in force.\n umber of\n");
+		final StringBuilder sb = new StringBuilder("Orders split based on side, type and time in force.\n number of\n");
 		final Map<OrderSide, Map<OrderType, Map<OrderTimeInForce, Long>>> threeLeveslGroupedOrders = orders.parallelStream().
 				collect(groupingBy(SimpleOrder::getSide, groupingBy(SimpleOrder::getType, groupingBy(SimpleOrder::getTimeInForce, Collectors.counting()))));
 		for (final Map.Entry<OrderSide, Map<OrderType, Map<OrderTimeInForce, Long>>> threeLeveslGroupedOrdersEntry : threeLeveslGroupedOrders.entrySet()) {

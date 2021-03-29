@@ -5,8 +5,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Date;
 import java.util.Properties;
 import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -50,6 +52,7 @@ public final class Utility {
 		return new BigDecimal(value).setScale(scale, RoundingMode.HALF_UP).doubleValue();
 	}
 	
+	//FIX 相手にメッセージを送信する用
 	public static void sendMessage(final SessionID sessionID, final Message message) {
         try {
             final Session session = Session.lookupSession(sessionID);
@@ -79,7 +82,13 @@ public final class Utility {
     }
     
     public static MarketData buildRandomMarketDataItem(final String symbol) {
-    	return new MarketData(symbol, roundDouble(Random.nextDouble() * 100, 2), 
-				Utility.roundDouble(Random.nextDouble() * 100, 2), Random.nextInt(1000), Random.nextInt(1000));
+    	return new MarketData(UUID.randomUUID().toString(),
+    			symbol, 
+    			Utility.roundDouble(Random.nextDouble() * 100, 2), //bid
+				Utility.roundDouble(Random.nextDouble() * 100, 2), //ask 
+				Random.nextInt(1000),  //bidsize
+				Random.nextInt(1000),  //asksize
+				new Date()
+				); 
     }
 }
